@@ -14,9 +14,24 @@ defmodule Exlastic do
       :world
 
   """
-  def log do
-    Logger.metadata(request_id: "ABCDEF")
-    Logger.debug("Starting Application...")
-    Logger.info("I should get output twice")
+  defmacro log(level, payload) do
+    %{module: module, function: fun, file: file, line: line} = _metadata = __CALLER__
+
+    quote do
+      # Logger.metadata(request_id: "ABCDEF")
+      :telemetry.execute(
+        [:exlastic, unquote(level)],
+        %{
+          now: :erlang.monotonic_time(),
+          metadata: %{
+            module: unquote(module),
+            function: unquote(fun),
+            file: unquote(file),
+            line: unquote(line)
+          }
+        },
+        unquote(payload)
+      )
+    end
   end
 end

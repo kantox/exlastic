@@ -23,7 +23,12 @@ defmodule Exlastic.Telemetry.Instrumenter do
     {text, metadata} = Map.pop(metadata, :text, "Telemetry Event")
 
     content =
-      Jason.encode!(%{measurements: measurements, context: metadata, title: title, text: text})
+      Jason.encode_to_iodata!(%{
+        measurements: measurements,
+        context: metadata,
+        title: title,
+        text: text
+      })
 
     case event do
       [:exlastic, level] when level in @levels ->

@@ -23,6 +23,15 @@ defmodule Exlastic.Logger.Item do
           context: map()
         ) :: t()
   def create(timestamp \\ nil, level, message, metadata \\ [], context \\ %{}) do
+    message = Jason.decode!(message) |> IO.inspect(label: "HERE")
+    {explicit_metadata, message} = pop_in(message, ["measurements", "metadata"])
+
+    metadata =
+      Keyword.merge(
+        metadata,
+        for({k, v} <- explicit_metadata || %{}, do: {String.to_atom(k), v})
+      )
+
     %__MODULE__{
       timestamp: timestamp || DateTime.utc_now(),
       level: level,

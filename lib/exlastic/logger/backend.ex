@@ -11,6 +11,15 @@ defmodule Exlastic.Logger.Backend do
 
   @behaviour :gen_event
 
+  defmacrop macro_log(do: block), do: quote(do: unquote(block))
+
+  defp maybe_log(min_level, level, do: block) do
+    min_level = Application.get_env(:logger, :compile_time_purge_level, min_level)
+
+    if Logger.Config.compare_levels(level, min_level) != :lt,
+      do: macro_log(do: block)
+  end
+
   @type state :: %{
           :name => atom(),
           :base_level => Logger.level()
@@ -27,13 +36,12 @@ defmodule Exlastic.Logger.Backend do
         {level, _group_leader, {Logger, message, timestamp, metadata}},
         %{level: min_level} = state
       ) do
-    IO.inspect({level, {Logger, message, timestamp, metadata}}, label: "HANDLE_EVENT")
-
-    # TODO MAYBE LOG MACRO
-    if need_log?(min_level, level) do
+    maybe_log min_level, level do
       item =
         Exlastic.Logger.Item.create(timestamp, level, message, metadata)
         |> IO.inspect(label: "ITEM")
+
+      Logger.metadata(item.metadata)
 
       Exlastic.Logger.Formatter.format(item.level, item.message, item.timestamp, item.metadata)
       |> IO.inspect()
@@ -62,9 +70,4 @@ defmodule Exlastic.Logger.Backend do
     |> Map.put_new(:name, name)
     |> Map.put_new(:level, base_level)
   end
-
-  defp need_log?(nil, _level), do: true
-
-  defp need_log?(min_level, level),
-    do: Logger.compare_levels(level, min_level) != :lt
 end
