@@ -8,7 +8,7 @@ defmodule Exlastic.Telemetry.Instrumenter do
     custom_events =
       :exlastic
       |> Application.get_env(:events, [])
-      |> Enum.map(&Enum.map(@levels, fn lvl -> [:exlastic, &1, lvl] end))
+      |> Enum.flat_map(&Enum.map(@levels, fn lvl -> [:exlastic, &1, lvl] end))
 
     events = Enum.map(@levels, &[:exlastic, &1]) ++ custom_events
 

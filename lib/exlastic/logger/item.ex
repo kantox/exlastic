@@ -19,11 +19,11 @@ defmodule Exlastic.Logger.Item do
           timestamp :: DateTime.t(),
           level :: Logger.level(),
           message :: Logger.message(),
-          metadata :: keyword(),
-          context: map()
+          metadata :: keyword()
         ) :: t()
-  def create(timestamp \\ nil, level, message, metadata \\ [], context \\ %{}) do
+  def create(timestamp \\ nil, level, message, metadata \\ []) do
     message = Jason.decode!(message, keys: :atoms)
+    {context, message} = Map.pop(message, :context)
     {explicit_metadata, message} = Map.pop(message, :metadata)
     {type, message} = Map.pop(message, :type, :default)
 

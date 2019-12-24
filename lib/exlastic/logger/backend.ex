@@ -10,7 +10,9 @@ defmodule Exlastic.Logger.Backend do
   """
 
   @behaviour :gen_event
-  import Tirexs.HTTP
+  # import Tirexs.HTTP
+
+  @uri Application.get_env(:exlastic, :uri, "http://127.0.0.1:9200")
 
   @spec maybe_log(min_level :: Logger.level(), level :: Logger.level(), keyword()) :: :ok | any()
   defmacrop maybe_log(min_level, level, do: block) do
@@ -52,10 +54,25 @@ defmodule Exlastic.Logger.Backend do
         :elastic ->
           IO.inspect(item, label: "POST")
 
-          post(
-            "/#{item.type}/#{item.message.entity}/",
-            Map.take(item, [:timestamp, :message, :metadata, :context])
+          json =
+            item
+            |> Map.take([:timestamp, :message, :context])
+            |> Jason.encode!()
+            |> :erlang.binary_to_list()
+
+          :httpc.request(
+            :post,
+            {to_charlist(@uri <> "/#{item.type}/#{item.message.entity}/"), [], 'application/json',
+             json},
+            [],
+            []
           )
+          |> IO.inspect(label: "REQUEST")
+
+        # post(
+        #   "/#{item.type}/#{item.message.entity}/",
+        #   Map.take(item, [:timestamp, :message, :metadata, :context])
+        # )
 
         :stdout ->
           IO.puts(
