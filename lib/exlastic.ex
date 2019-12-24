@@ -12,40 +12,42 @@ defmodule Exlastic do
 
   ## Examples
 
-      iex> Exlastic.hello()
-      :world
 
   """
 
   @spec log(level :: Logger.level(), tag :: atom(), entity :: entity(), payload :: keyword()) ::
-          :ok
+          {:ok, integer()}
   defmacro log(level, tag \\ nil, entity, payload) do
-    %{module: module, function: fun, file: file, line: line, context: context, vars: vars} =
-      _metadata = __CALLER__
+    %{module: module, function: fun, file: file, line: line, context: context} = __CALLER__
 
     quote do
-      # Logger.metadata(request_id: "ABCDEF")
       event =
         if is_nil(unquote(tag)),
           do: [:exlastic, unquote(level)],
           else: [:exlastic, unquote(tag), unquote(level)]
 
-      :telemetry.execute(
-        event,
-        %{
-          now: :erlang.monotonic_time(),
-          entity: unquote(entity),
-          metadata: %{
-            vars: Map.new(unquote(vars)),
-            context: unquote(context),
-            module: unquote(module),
-            function: unquote(fun),
-            file: unquote(file),
-            line: unquote(line)
-          }
-        },
-        Map.new(unquote(payload))
-      )
+      now = System.monotonic_time(:microsecond)
+      {benchmark, payload} = Keyword.pop(unquote(payload), :benchmark, "N/A")
+
+      :ok =
+        :telemetry.execute(
+          event,
+          %{
+            now: now,
+            benchmark: benchmark,
+            entity: unquote(entity),
+            metadata: %{
+              context: unquote(context),
+              module: unquote(module),
+              function: unquote(fun),
+              file: unquote(file),
+              line: unquote(line)
+            }
+          },
+          Map.new(payload)
+        )
+
+      {:ok, now}
     end
   end
 
@@ -56,7 +58,7 @@ defmodule Exlastic do
           payload_and_do_block :: keyword()
         ) :: any()
   defmacro bench(level, tag \\ nil, entity, payload_and_do_block) do
-    {block, payload} = Keyword.pop(payload_and_do_block, :do, :ok) |> IO.inspect(label: "TM")
+    {block, payload} = Keyword.pop(payload_and_do_block, :do, :ok)
 
     quote do
       reference = inspect(make_ref())
@@ -66,13 +68,16 @@ defmodule Exlastic do
         |> Keyword.put(:reference, reference)
         |> Keyword.put(:tag, :in)
 
-      :ok = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
+      {:ok, now} = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
 
       result = unquote(block)
 
-      payload = Keyword.put(payload, :tag, :out)
+      payload =
+        payload
+        |> Keyword.put(:tag, :out)
+        |> Keyword.put(:benchmark, System.monotonic_time(:microsecond) - now)
 
-      :ok = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
+      {:ok, _} = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
 
       result
     end

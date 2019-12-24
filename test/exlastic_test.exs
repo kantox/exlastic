@@ -3,6 +3,7 @@ defmodule ExlasticTest do
   doctest Exlastic
 
   test "greets the world" do
-    assert Exlastic.hello() == :world
+    # 1 = foo
+    # assert Exlastic.hello() == :world
   end
 end

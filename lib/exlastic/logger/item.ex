@@ -42,12 +42,10 @@ defmodule Exlastic.Logger.Item do
   @spec fix_timestamp(timestamp :: nil | :calendar.datetime()) :: binary()
   @doc false
   defp fix_timestamp(nil),
-    do: DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.to_iso8601()
+    do: DateTime.utc_now() |> DateTime.truncate(:millisecond) |> DateTime.to_iso8601()
 
-  defp fix_timestamp({{_, _, _} = d, {h, m, s, _ms}}), do: fix_timestamp({d, {h, m, s}})
-
-  defp fix_timestamp({{_, _, _}, {_, _, _}} = timestamp) do
-    with {:ok, timestamp} <- NaiveDateTime.from_erl(timestamp),
+  defp fix_timestamp({{_, _, _} = d, {h, m, s, ms}}) do
+    with {:ok, timestamp} <- NaiveDateTime.from_erl({d, {h, m, s}}, {ms * 1_000, 3}),
          result <- NaiveDateTime.to_iso8601(timestamp) do
       "#{result}Z"
     end

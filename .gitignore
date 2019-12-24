@@ -24,3 +24,7 @@ exlastic-*.tar
 
 /.elixir_ls/
 
+/.dialyzer/plts/*.plt*
+
+.exenv-version
+

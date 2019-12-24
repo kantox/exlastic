@@ -71,7 +71,7 @@ defmodule Exlastic.Logger.Backend do
           IO.puts(
             Exlastic.Logger.Formatter.format(
               item.level,
-              item.message,
+              %{message: item.message, context: item.context},
               item.timestamp,
               item.metadata
             )
@@ -93,8 +93,9 @@ defmodule Exlastic.Logger.Backend do
     base_level = Application.get_env(:logger, :level, :debug)
 
     opts =
-      :logger
-      |> Application.get_env(name, opts)
+      :exlastic
+      |> Application.get_all_env()
+      |> Keyword.merge(opts)
       |> Map.new()
 
     state

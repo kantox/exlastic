@@ -4,28 +4,24 @@ defmodule Exlastic.Logger.Formatter do
   }
 
   def format(level, message, timestamp, metadata) do
-    "##### #{timestamp!(timestamp)} #{metadata!(metadata)} [#{level}] #{metadata!(message)}\n"
+    "[🎬] #{timestamp} #{binary!(metadata)} [#{level}] #{binary!(message)}\n"
   rescue
-    # {:debug, "Starting Application...",
-    #  {{2019, 12, 23}, {13, 30, 15, 464}},
-    #  [pid: #PID<0.202.0>, line: 19, function: "log/0", module: Exlastic, file: "lib/exlastic.ex", application: :exlastic, request_id: "ABCDEF"]}
     err ->
-      "could not format message: #{inspect({level, message, timestamp, metadata})}\n#{
-        inspect(err)
-      }"
+      inputs = inspect({level, message, timestamp, metadata})
+      "[🎬] could not format message: #{inputs}\n#{inspect(err)}"
   end
 
-  defp metadata!(%{} = md), do: metadata!(Map.to_list(md))
+  defp binary!(%{} = term), do: binary!(Map.to_list(term))
 
-  defp metadata!(md) when is_list(md) do
-    md
+  defp binary!(term) when is_list(term) do
+    term
     |> Keyword.keys()
-    |> Enum.map(&do_metadata(md, &1))
+    |> Enum.map(&do_binary(term, &1))
     |> Enum.join(" ")
   end
 
-  defp do_metadata(metadata, key) do
-    value = if is_nil(metadata[key]), do: "nil", else: metadata[key]
+  defp do_binary(term, key) do
+    value = if is_nil(term[key]), do: "nil", else: term[key]
 
     value =
       Map.get(
@@ -35,12 +31,5 @@ defmodule Exlastic.Logger.Formatter do
       )
 
     "#{key}=#{value}"
-  end
-
-  defp timestamp!({date, {hh, mm, ss, ms}}) do
-    with {:ok, timestamp} <- NaiveDateTime.from_erl({date, {hh, mm, ss}}, {ms * 1000, 3}),
-         result <- NaiveDateTime.to_iso8601(timestamp) do
-      "#{result}Z"
-    end
   end
 end
