@@ -15,27 +15,27 @@ defmodule Exlastic.Telemetry.Instrumenter do
     :telemetry.attach_many("#{otp_app}-instrumenter", events, &handle_event/4, nil)
   end
 
-  def handle_event(event, measurements, metadata, config) do
-    IO.inspect({event, measurements, metadata, config})
-    # Timber.add_context(measurements: measurements, event: Enum.join(event, "."))
+  def handle_event(event, measurements, context, _config) do
+    {entity, measurements} = Map.pop(measurements, :entity, "default")
+    {metadata, measurements} = Map.pop(measurements, :metadata)
 
-    {title, metadata} = Map.pop(metadata, :title, :data)
-    {text, metadata} = Map.pop(metadata, :text, "Telemetry Event")
+    content = %{
+      context: context,
+      measurements: measurements,
+      metadata: metadata,
+      entity: entity
+    }
 
-    content =
-      Jason.encode_to_iodata!(%{
-        measurements: measurements,
-        context: metadata,
-        title: title,
-        text: text
-      })
+    {type, level} =
+      case event do
+        [:exlastic, level] when level in @levels -> {:default, level}
+        [:exlastic, type, level] when level in @levels -> {type, level}
+      end
 
-    case event do
-      [:exlastic, level] when level in @levels ->
-        Logger.log(level, fn -> content end)
-
-      [:exlastic, type, level] when level in @levels ->
-        Logger.log(level, fn -> Map.put(content, :type, type) end)
-    end
+    Logger.log(level, fn ->
+      content
+      |> Map.put(:type, type)
+      |> Jason.encode_to_iodata!()
+    end)
   end
 end

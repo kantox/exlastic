@@ -10,41 +10,63 @@ defmodule Exlastic.Logger.Backend do
   """
 
   @behaviour :gen_event
+  import Tirexs.HTTP
 
-  defmacrop macro_log(do: block), do: quote(do: unquote(block))
+  @spec maybe_log(min_level :: Logger.level(), level :: Logger.level(), keyword()) :: :ok | any()
+  defmacrop maybe_log(min_level, level, do: block) do
+    quote do
+      min_level = Application.get_env(:logger, :compile_time_purge_level, unquote(min_level))
 
-  defp maybe_log(min_level, level, do: block) do
-    min_level = Application.get_env(:logger, :compile_time_purge_level, min_level)
-
-    if Logger.Config.compare_levels(level, min_level) != :lt,
-      do: macro_log(do: block)
+      if Logger.Config.compare_levels(unquote(level), unquote(min_level)) != :lt,
+        do: unquote(block),
+        else: :ok
+    end
   end
 
   @type state :: %{
           :name => atom(),
-          :base_level => Logger.level()
+          :level => Logger.level(),
+          :handler => :elastic | :stdout
         }
 
+  @doc false
   @impl :gen_event
   def init(__MODULE__), do: {:ok, configure(__MODULE__)}
 
+  @doc false
   @impl :gen_event
   def handle_event(:flush, state), do: {:ok, state}
 
+  @doc false
   @impl :gen_event
   def handle_event(
         {level, _group_leader, {Logger, message, timestamp, metadata}},
-        %{level: min_level} = state
+        %{level: min_level, handler: handler} = state
       ) do
     maybe_log min_level, level do
-      item =
-        Exlastic.Logger.Item.create(timestamp, level, message, metadata)
-        |> IO.inspect(label: "ITEM")
+      item = Exlastic.Logger.Item.create(timestamp, level, message, metadata)
 
       Logger.metadata(item.metadata)
 
-      Exlastic.Logger.Formatter.format(item.level, item.message, item.timestamp, item.metadata)
-      |> IO.inspect()
+      case handler do
+        :elastic ->
+          IO.inspect(item, label: "POST")
+
+          post(
+            "/#{item.type}/#{item.message.entity}/",
+            Map.take(item, [:timestamp, :message, :metadata, :context])
+          )
+
+        :stdout ->
+          IO.puts(
+            Exlastic.Logger.Formatter.format(
+              item.level,
+              item.message,
+              item.timestamp,
+              item.metadata
+            )
+          )
+      end
     end
 
     {:ok, state}
@@ -69,5 +91,6 @@ defmodule Exlastic.Logger.Backend do
     |> Map.merge(opts)
     |> Map.put_new(:name, name)
     |> Map.put_new(:level, base_level)
+    |> Map.put_new(:handler, :elastic)
   end
 end

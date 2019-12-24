@@ -4,7 +4,7 @@ defmodule Exlastic.Logger.Formatter do
   }
 
   def format(level, message, timestamp, metadata) do
-    "##### #{timestamp!(timestamp)} #{metadata!(metadata)} [#{level}] #{message}\n"
+    "##### #{timestamp!(timestamp)} #{metadata!(metadata)} [#{level}] #{metadata!(message)}\n"
   rescue
     # {:debug, "Starting Application...",
     #  {{2019, 12, 23}, {13, 30, 15, 464}},
@@ -25,14 +25,13 @@ defmodule Exlastic.Logger.Formatter do
   end
 
   defp do_metadata(metadata, key) do
+    value = if is_nil(metadata[key]), do: "nil", else: metadata[key]
+
     value =
       Map.get(
         @protected,
         key,
-        if(String.Chars.impl_for(metadata[key]),
-          do: to_string(metadata[key]),
-          else: inspect(metadata[key])
-        )
+        if(String.Chars.impl_for(value), do: to_string(value), else: inspect(value))
       )
 
     "#{key}=#{value}"
