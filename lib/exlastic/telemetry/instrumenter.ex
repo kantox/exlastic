@@ -1,4 +1,6 @@
 defmodule Exlastic.Telemetry.Instrumenter do
+  @moduledoc false
+
   require Logger
   @levels ~w|debug info warn error|a
 

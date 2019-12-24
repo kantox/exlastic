@@ -4,7 +4,7 @@ defmodule Exlastic.Logger.Item do
   defstruct [:timestamp, :level, :message, :type, metadata: [], context: %{}]
 
   @type t :: %__MODULE__{
-          timestamp: DateTime.t(),
+          timestamp: binary(),
           level: Logger.level(),
           message: Logger.message(),
           type: atom(),
@@ -16,7 +16,7 @@ defmodule Exlastic.Logger.Item do
   Creates a new `Item` struct
   """
   @spec create(
-          timestamp :: DateTime.t(),
+          timestamp :: nil | DateTime.t(),
           level :: Logger.level(),
           message :: Logger.message(),
           metadata :: keyword()

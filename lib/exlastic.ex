@@ -15,8 +15,8 @@ defmodule Exlastic do
 
   """
 
-  @spec log(level :: Logger.level(), tag :: atom(), entity :: entity(), payload :: keyword()) ::
-          {:ok, integer()}
+  # @spec log(level :: Logger.level(), tag :: atom(), entity :: entity(), payload :: keyword()) ::
+  #         {:ok, integer()}
   defmacro log(level, tag \\ nil, entity, payload) do
     %{module: module, function: fun, file: file, line: line, context: context} = __CALLER__
 

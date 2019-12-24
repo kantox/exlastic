@@ -1,8 +1,16 @@
 defmodule Exlastic.Logger.Formatter do
+  @moduledoc false
+
   @protected %{
-    request_id: "[********]"
+    password: "[********]"
   }
 
+  @spec format(
+          level :: Logger.level(),
+          message :: Logger.message(),
+          timestamp :: binary(),
+          metadata :: Logger.metadata()
+        ) :: binary()
   def format(level, message, timestamp, metadata) do
     "[🎬] #{timestamp} #{binary!(metadata)} [#{level}] #{binary!(message)}\n"
   rescue
@@ -11,6 +19,7 @@ defmodule Exlastic.Logger.Formatter do
       "[🎬] could not format message: #{inputs}\n#{inspect(err)}"
   end
 
+  @spec binary!(term :: map() | keyword()) :: binary()
   defp binary!(%{} = term), do: binary!(Map.to_list(term))
 
   defp binary!(term) when is_list(term) do
@@ -20,6 +29,7 @@ defmodule Exlastic.Logger.Formatter do
     |> Enum.join(" ")
   end
 
+  @spec do_binary(term :: keyword(), key :: atom()) :: binary()
   defp do_binary(term, key) do
     value = if is_nil(term[key]), do: "nil", else: term[key]
 

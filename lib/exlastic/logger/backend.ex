@@ -10,7 +10,7 @@ defmodule Exlastic.Logger.Backend do
   """
 
   @behaviour :gen_event
-  # import Tirexs.HTTP
+  alias Exlastic.Logger.{Formatter, Item}
 
   @uri Application.get_env(:exlastic, :uri, "http://127.0.0.1:9200")
 
@@ -46,7 +46,7 @@ defmodule Exlastic.Logger.Backend do
         %{level: min_level, handler: handler} = state
       ) do
     maybe_log min_level, level do
-      item = Exlastic.Logger.Item.create(timestamp, level, message, metadata)
+      item = Item.create(timestamp, level, message, metadata)
 
       Logger.metadata(item.metadata)
 
@@ -69,7 +69,7 @@ defmodule Exlastic.Logger.Backend do
 
         :stdout ->
           IO.puts(
-            Exlastic.Logger.Formatter.format(
+            Formatter.format(
               item.level,
               %{message: item.message, context: item.context},
               item.timestamp,
@@ -88,7 +88,7 @@ defmodule Exlastic.Logger.Backend do
 
   ##############################################################################
 
-  @spec configure(name :: atom(), opts :: keyword(), state :: state()) :: state()
+  @spec configure(name :: atom(), opts :: keyword(), state :: map()) :: state()
   defp configure(name, opts \\ [], state \\ %{}) when is_map(state) do
     base_level = Application.get_env(:logger, :level, :debug)
 

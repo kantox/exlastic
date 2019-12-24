@@ -5,10 +5,12 @@ defmodule Exlastic.Application do
 
   use Application
 
+  alias Exlastic.Telemetry.Instrumenter
+
   def start(_type, _args) do
     children = []
 
-    Exlastic.Telemetry.Instrumenter.setup()
+    Instrumenter.setup()
 
     opts = [strategy: :one_for_one, name: Exlastic.Supervisor]
     Supervisor.start_link(children, opts)

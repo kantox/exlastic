@@ -23,7 +23,7 @@ defmodule Exlastic.MixProject do
       dialyzer: [
         plt_file: {:no_warn, ".dialyzer/plts/dialyzer.plt"},
         plt_add_deps: :transitive,
-        plt_add_apps: [:phoenix_pubsub],
+        plt_add_apps: [],
         ignore_warnings: ".dialyzer/ignore.exs"
       ]
     ]
@@ -38,7 +38,6 @@ defmodule Exlastic.MixProject do
 
   defp deps do
     [
-      {:tirexs, "~> 0.8"},
       {:telemetry, "~> 0.4"},
       {:jason, "~> 1.0"},
       # utilities
