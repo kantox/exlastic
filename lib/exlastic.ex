@@ -75,16 +75,16 @@ defmodule Exlastic do
           :garbage_collection
         ])
         |> Map.update!(:garbage_collection, &Map.new/1)
+        |> Map.put(:schedulers, System.schedulers())
 
       :ok =
         :telemetry.execute(
           event,
           %{
-            now: now,
-            schedulers: System.schedulers(),
-            process_info: process_info,
             benchmark: benchmark,
+            now: now,
             entity: unquote(entity),
+            process_info: process_info,
             metadata: %{
               context: unquote(context),
               module: unquote(module),
