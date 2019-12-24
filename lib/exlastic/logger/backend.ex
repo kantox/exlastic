@@ -55,17 +55,27 @@ defmodule Exlastic.Logger.Backend do
           json =
             item
             |> Map.take([:timestamp, :context, :level])
+            |> Map.put(:entity, item.message.entity)
             |> Map.put(:telemetry, item.message.measurements)
             |> Jason.encode!()
             |> :erlang.binary_to_list()
 
-          :httpc.request(
-            :post,
-            {to_charlist(@uri <> "/#{item.type}/#{item.message.entity}/"), [], 'application/json',
-             json},
-            [],
-            []
-          )
+          uuid = Exlastic.UUID.generate()
+
+          case :httpc.request(
+                 :post,
+                 {to_charlist(@uri <> "/#{item.type}/_create/#{uuid}"), [], 'application/json',
+                  json},
+                 [],
+                 []
+               ) do
+            {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
+              [id] = for {'location', id} <- resp, do: id
+              IO.inspect({:ok, to_string(id)}, label: "[🎬]")
+
+            error ->
+              IO.inspect({:error, error}, label: "[🎮]")
+          end
 
         :stdout ->
           IO.puts(
@@ -83,8 +93,10 @@ defmodule Exlastic.Logger.Backend do
   end
 
   @impl :gen_event
-  def handle_call({:configure, opts}, %{name: name} = state),
-    do: {:ok, :ok, configure(name, opts, state)}
+  def handle_call({:configure, opts}, %{name: name} = state) do
+    cfg = configure(name, opts, state)
+    {:ok, cfg, cfg}
+  end
 
   ##############################################################################
 

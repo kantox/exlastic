@@ -8,15 +8,8 @@ defmodule Exlastic do
   @type entity :: binary() | atom()
 
   @doc """
-  Geberic log function.
-
-  ## Examples
-
-
+  Generic log function.
   """
-
-  # @spec log(level :: Logger.level(), tag :: atom(), entity :: entity(), payload :: keyword()) ::
-  #         {:ok, integer()}
   defmacro log(level, tag \\ nil, entity, payload) do
     %{module: module, function: fun, file: file, line: line, context: context} = __CALLER__
 
@@ -65,8 +58,8 @@ defmodule Exlastic do
 
       payload =
         unquote(payload)
-        |> Keyword.put(:reference, reference)
-        |> Keyword.put(:tag, :in)
+        |> Keyword.put(:__reference__, reference)
+        |> Keyword.put(:__tag__, :in)
 
       {:ok, now} = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
 
@@ -74,12 +67,12 @@ defmodule Exlastic do
 
       payload =
         payload
-        |> Keyword.put(:tag, :out)
+        |> Keyword.put(:__tag__, :out)
         |> Keyword.put(:benchmark, System.monotonic_time(:microsecond) - now)
 
       {:ok, _} = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
 
-      result
+      {:ok, result, payload}
     end
   end
 end

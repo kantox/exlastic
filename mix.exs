@@ -40,6 +40,7 @@ defmodule Exlastic.MixProject do
     [
       {:telemetry, "~> 0.4"},
       {:jason, "~> 1.0"},
+      {:tirexs, "~> 0.8"},
       # utilities
       {:credo, "~> 1.0", only: [:dev, :ci]},
       {:dialyxir, "~> 1.0.0-rc.6", only: [:dev, :ci], runtime: false},
