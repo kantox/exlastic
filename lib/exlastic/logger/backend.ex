@@ -52,11 +52,10 @@ defmodule Exlastic.Logger.Backend do
 
       case handler do
         :elastic ->
-          IO.inspect(item, label: "POST")
-
           json =
             item
-            |> Map.take([:timestamp, :message, :context])
+            |> Map.take([:timestamp, :context, :level])
+            |> Map.put(:telemetry, item.message.measurements)
             |> Jason.encode!()
             |> :erlang.binary_to_list()
 
@@ -67,12 +66,6 @@ defmodule Exlastic.Logger.Backend do
             [],
             []
           )
-          |> IO.inspect(label: "REQUEST")
-
-        # post(
-        #   "/#{item.type}/#{item.message.entity}/",
-        #   Map.take(item, [:timestamp, :message, :metadata, :context])
-        # )
 
         :stdout ->
           IO.puts(

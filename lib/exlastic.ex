@@ -5,6 +5,8 @@ defmodule Exlastic do
 
   require Logger
 
+  @type entity :: binary() | atom()
+
   @doc """
   Geberic log function.
 
@@ -14,7 +16,10 @@ defmodule Exlastic do
       :world
 
   """
-  defmacro log(level, tag \\ nil, {entity, payload}) do
+
+  @spec log(level :: Logger.level(), tag :: atom(), entity :: entity(), payload :: keyword()) ::
+          :ok
+  defmacro log(level, tag \\ nil, entity, payload) do
     %{module: module, function: fun, file: file, line: line, context: context, vars: vars} =
       _metadata = __CALLER__
 
@@ -39,8 +44,37 @@ defmodule Exlastic do
             line: unquote(line)
           }
         },
-        unquote(payload)
+        Map.new(unquote(payload))
       )
+    end
+  end
+
+  @spec bench(
+          level :: Logger.level(),
+          tag :: atom(),
+          entity :: entity(),
+          payload_and_do_block :: keyword()
+        ) :: any()
+  defmacro bench(level, tag \\ nil, entity, payload_and_do_block) do
+    {block, payload} = Keyword.pop(payload_and_do_block, :do, :ok) |> IO.inspect(label: "TM")
+
+    quote do
+      reference = inspect(make_ref())
+
+      payload =
+        unquote(payload)
+        |> Keyword.put(:reference, reference)
+        |> Keyword.put(:tag, :in)
+
+      :ok = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
+
+      result = unquote(block)
+
+      payload = Keyword.put(payload, :tag, :out)
+
+      :ok = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
+
+      result
     end
   end
 end
