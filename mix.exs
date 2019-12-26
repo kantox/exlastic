@@ -3,7 +3,7 @@ defmodule Exlastic.MixProject do
 
   @app :exlastic
   @version "0.1.1"
-  @owner "am-kantox"
+  @owner "kantox"
 
   def project do
     [
