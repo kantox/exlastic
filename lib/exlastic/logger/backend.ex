@@ -1,13 +1,5 @@
 defmodule Exlastic.Logger.Backend do
-  @moduledoc """
-  Logger backend to send logs to `ElasticSearch` engine with a telemetry attached.
-
-  Log events are coming in the following format:
-
-  ```
-  { log_level, group_leader, {Logger, message, timestamp, metadata} }
-  ```
-  """
+  @moduledoc false
 
   @behaviour :gen_event
   alias Exlastic.Logger.{Formatter, Item}
