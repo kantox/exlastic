@@ -3,7 +3,7 @@ defmodule Exlastic.MixProject do
 
   @app :exlastic
   @app_name "#{@app}"
-  @version "0.1.0"
+  @version "0.1.1"
   @owner "kantox"
 
   def project do
@@ -40,7 +40,6 @@ defmodule Exlastic.MixProject do
     [
       {:telemetry, "~> 0.4"},
       {:jason, "~> 1.0"},
-      {:tirexs, "~> 0.8"},
       # utilities
       {:credo, "~> 1.0", only: [:dev, :ci]},
       {:dialyxir, "~> 1.0.0-rc.6", only: [:dev, :ci], runtime: false},

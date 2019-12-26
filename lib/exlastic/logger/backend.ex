@@ -71,10 +71,25 @@ defmodule Exlastic.Logger.Backend do
                ) do
             {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
               [id] = for {'location', id} <- resp, do: id
-              IO.inspect({:ok, to_string(id)}, label: "[🎬]")
+
+              IO.puts(
+                Formatter.format(
+                  :debug,
+                  %{ok: to_string(id)},
+                  item.timestamp,
+                  item.metadata
+                )
+              )
 
             error ->
-              IO.inspect({:error, error}, label: "[🎮]")
+              IO.puts(
+                Formatter.format(
+                  :warning,
+                  %{error: inspect(error)},
+                  item.timestamp,
+                  item.metadata
+                )
+              )
           end
 
         :stdout ->
