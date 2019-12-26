@@ -2,7 +2,6 @@ defmodule Exlastic.MixProject do
   use Mix.Project
 
   @app :exlastic
-  @app_name "#{@app}"
   @version "0.1.1"
   @owner "kantox"
 
@@ -82,7 +81,7 @@ defmodule Exlastic.MixProject do
 
   defp docs do
     [
-      main: @app_name,
+      main: "Exlastic",
       source_ref: "v#{@version}",
       canonical: "http://hexdocs.pm/#{@app}",
       # logo: "stuff/logo-48x48.png",

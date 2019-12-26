@@ -14,6 +14,7 @@ defmodule Exlastic do
   config :logger,
     backends: [Exlastic.Logger.Backend],
     level: :debug
+  ```
 
   and might be used normally as a usual logger backend
 
@@ -48,8 +49,7 @@ defmodule Exlastic do
   as is.
 
   * `level` parameter is one of `:debug | :info | :warn | :error`
-  * `tag` is mapped to ElasticSearch index when passed; possible values must be
-    configured in `config.exs` file in the list of telemetry events
+  * `tag` is mapped to ElasticSearch index when passed; possible values must be configured in `config.exs` file in the list of telemetry events
   * `entity` parameter is the additional tagging that goes into payload, e. g. `"orders"`
   * `payload` is anything encodeable into `json`
   """
@@ -149,7 +149,7 @@ defmodule Exlastic do
   end
 
   Enum.each([:error, :warn, :info, :debug], fn level ->
-    @doc "Helper macro to produce a logger entry with level #{level}"
+    @doc "Helper macro to produce a logger entry with level **`#{level}`**."
     defmacro unquote(level)(tag \\ nil, entity, payload),
       do: log(unquote(level), tag, entity, payload)
   end)
