@@ -46,62 +46,64 @@ defmodule Exlastic.Logger.Backend do
         %{level: min_level, handler: handler} = state
       ) do
     maybe_log min_level, level do
-      item = Item.create(timestamp, level, message, metadata)
+      Task.async(fn ->
+        item = Item.create(timestamp, level, message, metadata)
 
-      Logger.metadata(item.metadata)
+        Logger.metadata(item.metadata)
 
-      case handler do
-        :elastic ->
-          json =
-            item
-            |> Map.take([:timestamp, :context, :level])
-            |> Map.put(:entity, item.message.entity)
-            |> Map.put(:telemetry, item.message.measurements)
-            |> Jason.encode!()
-            |> :erlang.binary_to_list()
+        case handler do
+          :elastic ->
+            json =
+              item
+              |> Map.take([:timestamp, :context, :level])
+              |> Map.put(:entity, item.message.entity)
+              |> Map.put(:telemetry, item.message.measurements)
+              |> Jason.encode!()
+              |> :erlang.binary_to_list()
 
-          uuid = Exlastic.UUID.generate()
+            uuid = Exlastic.UUID.generate()
 
-          case :httpc.request(
-                 :post,
-                 {to_charlist(@uri <> "/#{item.type}/_create/#{uuid}"), [], 'application/json',
-                  json},
-                 [],
-                 []
-               ) do
-            {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
-              [id] = for {'location', id} <- resp, do: id
+            case :httpc.request(
+                   :post,
+                   {to_charlist(@uri <> "/#{item.type}/_create/#{uuid}"), [], 'application/json',
+                    json},
+                   [],
+                   []
+                 ) do
+              {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
+                [id] = for {'location', id} <- resp, do: id
 
-              IO.puts(
-                Formatter.format(
-                  :debug,
-                  %{ok: to_string(id)},
-                  item.timestamp,
-                  item.metadata
+                IO.puts(
+                  Formatter.format(
+                    :debug,
+                    %{ok: to_string(id)},
+                    item.timestamp,
+                    item.metadata
+                  )
                 )
-              )
 
-            error ->
-              IO.puts(
-                Formatter.format(
-                  :warning,
-                  %{error: inspect(error)},
-                  item.timestamp,
-                  item.metadata
+              error ->
+                IO.puts(
+                  Formatter.format(
+                    :warn,
+                    %{error: inspect(error)},
+                    item.timestamp,
+                    item.metadata
+                  )
                 )
-              )
-          end
+            end
 
-        :stdout ->
-          IO.puts(
-            Formatter.format(
-              item.level,
-              %{message: item.message, context: item.context},
-              item.timestamp,
-              item.metadata
+          :stdout ->
+            IO.puts(
+              Formatter.format(
+                item.level,
+                %{message: item.message, context: item.context},
+                item.timestamp,
+                item.metadata
+              )
             )
-          )
-      end
+        end
+      end)
     end
 
     {:ok, state}
