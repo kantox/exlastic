@@ -84,7 +84,7 @@ defmodule Exlastic.MixProject do
       main: "Exlastic",
       source_ref: "v#{@version}",
       canonical: "http://hexdocs.pm/#{@app}",
-      # logo: "stuff/logo-48x48.png",
+      logo: "stuff/logo-48x48.png",
       source_url: "https://github.com/#{@owner}/#{@app}",
       # extras: [
       #   "stuff/#{@app_name}.md",

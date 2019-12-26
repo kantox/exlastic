@@ -1,4 +1,4 @@
-# Exlastic
+# ![Exlastic](/stuff/logo-48x48.png?raw=true) Exlastic
 
 An opinionated [logger backend](https://hexdocs.pm/logger/Logger.html#module-backends) helper library to log events with [`telemetry`](https://hexdocs.pm/telemetry) attached.
 
