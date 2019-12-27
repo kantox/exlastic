@@ -1,4 +1,4 @@
-defmodule Exlastic.UUID do
+defmodule Gelato.UUID do
   @moduledoc false
   # Gracefully stolen from Ecto type for UUIDs strings.
 

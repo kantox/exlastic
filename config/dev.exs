@@ -1,10 +1,10 @@
 import Config
 
-config :exlastic,
+config :gelato,
   uri: "http://127.0.0.1:9200",
   events: [:app, :lib],
   handler: :elastic
 
 config :logger,
-  backends: [Exlastic.Logger.Backend],
+  backends: [Gelato.Logger.Backend],
   level: :debug

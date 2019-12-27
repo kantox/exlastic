@@ -1,18 +1,18 @@
-defmodule Exlastic.Telemetry.Instrumenter do
+defmodule Gelato.Telemetry.Instrumenter do
   @moduledoc false
 
   require Logger
   @levels ~w|debug info warn error|a
 
   def setup do
-    otp_app = Application.get_env(:exlastic, :otp_app, :exlastic)
+    otp_app = Application.get_env(:gelato, :otp_app, :gelato)
 
     custom_events =
-      :exlastic
+      :gelato
       |> Application.get_env(:events, [])
-      |> Enum.flat_map(&Enum.map(@levels, fn lvl -> [:exlastic, &1, lvl] end))
+      |> Enum.flat_map(&Enum.map(@levels, fn lvl -> [:gelato, &1, lvl] end))
 
-    events = Enum.map(@levels, &[:exlastic, &1]) ++ custom_events
+    events = Enum.map(@levels, &[:gelato, &1]) ++ custom_events
 
     :telemetry.attach_many("#{otp_app}-instrumenter", events, &handle_event/4, nil)
   end
@@ -30,8 +30,8 @@ defmodule Exlastic.Telemetry.Instrumenter do
 
     {type, level} =
       case event do
-        [:exlastic, level] when level in @levels -> {:default, level}
-        [:exlastic, type, level] when level in @levels -> {type, level}
+        [:gelato, level] when level in @levels -> {:default, level}
+        [:gelato, type, level] when level in @levels -> {type, level}
       end
 
     Logger.log(level, fn ->

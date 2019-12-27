@@ -1,18 +1,18 @@
-defmodule Exlastic do
+defmodule Gelato do
   @moduledoc """
-  `Exlastic` is a opinionated [logger backend](https://hexdocs.pm/logger/Logger.html#module-backends)
+  `Gelato` is a opinionated [logger backend](https://hexdocs.pm/logger/Logger.html#module-backends)
   helper library to log events with [`telemetry`](https://hexdocs.pm/telemetry) attached.
 
   It is to be configured in `config.exs` in the following way:
 
   ```elixir
-  config :exlastic,
+  config :gelato,
     uri: "http://127.0.0.1:9200",
     events: [:app, :lib],
     handler: :elastic
 
   config :logger,
-    backends: [Exlastic.Logger.Backend],
+    backends: [Gelato.Logger.Backend],
     level: :debug
   ```
 
@@ -59,8 +59,8 @@ defmodule Exlastic do
     quote do
       event =
         if is_nil(unquote(tag)),
-          do: [:exlastic, unquote(level)],
-          else: [:exlastic, unquote(tag), unquote(level)]
+          do: [:gelato, unquote(level)],
+          else: [:gelato, unquote(tag), unquote(level)]
 
       now = System.monotonic_time(:microsecond)
       {benchmark, payload} = Keyword.pop(unquote(payload), :benchmark, "N/A")
@@ -177,7 +177,7 @@ defmodule Exlastic do
         |> Keyword.put(:__reference__, reference)
         |> Keyword.put(:__tag__, :in)
 
-      {:ok, now} = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
+      {:ok, now} = Gelato.log(unquote(level), unquote(tag), unquote(entity), payload)
 
       result = unquote(block)
 
@@ -186,7 +186,7 @@ defmodule Exlastic do
         |> Keyword.put(:__tag__, :out)
         |> Keyword.put(:benchmark, System.monotonic_time(:microsecond) - now)
 
-      {:ok, _} = Exlastic.log(unquote(level), unquote(tag), unquote(entity), payload)
+      {:ok, _} = Gelato.log(unquote(level), unquote(tag), unquote(entity), payload)
 
       {:ok, result, payload}
     end

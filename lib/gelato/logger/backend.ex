@@ -1,10 +1,10 @@
-defmodule Exlastic.Logger.Backend do
+defmodule Gelato.Logger.Backend do
   @moduledoc false
 
   @behaviour :gen_event
-  alias Exlastic.Logger.{Formatter, Item}
+  alias Gelato.Logger.{Formatter, Item}
 
-  @uri Application.get_env(:exlastic, :uri, "http://127.0.0.1:9200")
+  @uri Application.get_env(:gelato, :uri, "http://127.0.0.1:9200")
 
   @spec maybe_log(min_level :: Logger.level(), level :: Logger.level(), keyword()) :: :ok | any()
   defmacrop maybe_log(min_level, level, do: block) do
@@ -53,7 +53,7 @@ defmodule Exlastic.Logger.Backend do
               |> Jason.encode!()
               |> :erlang.binary_to_list()
 
-            uuid = Exlastic.UUID.generate()
+            uuid = Gelato.UUID.generate()
 
             case :httpc.request(
                    :post,
@@ -114,7 +114,7 @@ defmodule Exlastic.Logger.Backend do
     base_level = Application.get_env(:logger, :level, :debug)
 
     opts =
-      :exlastic
+      :gelato
       |> Application.get_all_env()
       |> Keyword.merge(opts)
       |> Map.new()

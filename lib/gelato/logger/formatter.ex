@@ -1,4 +1,4 @@
-defmodule Exlastic.Logger.Formatter do
+defmodule Gelato.Logger.Formatter do
   @moduledoc false
 
   @protected %{

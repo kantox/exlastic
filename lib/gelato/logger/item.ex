@@ -1,4 +1,4 @@
-defmodule Exlastic.Logger.Item do
+defmodule Gelato.Logger.Item do
   @moduledoc false
 
   defstruct [:timestamp, :level, :message, :type, metadata: [], context: %{}]
