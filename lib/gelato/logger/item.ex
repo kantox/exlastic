@@ -16,12 +16,12 @@ defmodule Gelato.Logger.Item do
   Creates a new `Item` struct
   """
   @spec create(
-          timestamp :: nil | DateTime.t(),
           level :: Logger.level(),
+          timestamp :: nil | DateTime.t(),
           message :: Logger.message(),
           metadata :: keyword()
         ) :: t()
-  def create(timestamp \\ nil, level, message, metadata \\ []) do
+  def create(level, timestamp \\ nil, message, metadata \\ []) do
     case Jason.decode(message, keys: :atoms) do
       {:ok, message} ->
         {context, message} = Map.pop(message, :context)

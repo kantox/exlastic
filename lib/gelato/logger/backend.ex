@@ -2,20 +2,44 @@ defmodule Gelato.Logger.Backend do
   @moduledoc false
 
   @behaviour :gen_event
-  alias Gelato.Logger.{Formatter, Item}
 
-  @uri Application.get_env(:gelato, :uri, "http://127.0.0.1:9200")
+  @spec tm(level :: Logger.level(), pid :: pid(), binary(), keyword()) :: :ok
+  defmacrop tm(level, pid, tag, payload) do
+    quote location: :keep do
+      event =
+        if is_nil(unquote(tag)),
+          do: [:gelato, unquote(level)],
+          else: [:gelato, String.to_atom(unquote(tag)), unquote(level)]
 
-  @spec maybe_log(min_level :: Logger.level(), level :: Logger.level(), keyword()) :: :ok | any()
-  defmacrop maybe_log(min_level, level, do: block) do
-    quote do
-      min_level = Application.get_env(:logger, :compile_time_purge_level, unquote(min_level))
+      metadata =
+        Logger.metadata()
+        |> Keyword.update(:pid, inspect(unquote(pid)), &inspect/1)
 
-      if Logger.Config.compare_levels(unquote(level), unquote(min_level)) != :lt,
-        do: unquote(block),
-        else: :ok
+      payload = unquote(payload)
+      now = System.monotonic_time(:microsecond)
+
+      {benchmark, payload} = Keyword.pop(payload, :benchmark, "N/A")
+      {process_info, payload} = Keyword.pop(payload, :process_info, true)
+      {entity, payload} = Keyword.pop(payload, :entity, metadata[:module])
+      {handler, payload} = Keyword.pop(payload, :handler, :elastic)
+
+      :ok =
+        :telemetry.execute(
+          event,
+          %{
+            benchmark: benchmark,
+            handler: handler,
+            now: now,
+            entity: entity,
+            process_info: process_info(unquote(pid), process_info),
+            metadata: Map.new(metadata)
+          },
+          Map.new(payload)
+        )
     end
   end
+
+  ##############################################################################
 
   @type state :: %{
           :name => atom(),
@@ -34,69 +58,25 @@ defmodule Gelato.Logger.Backend do
   @doc false
   @impl :gen_event
   def handle_event(
-        {level, _group_leader, {Logger, message, timestamp, metadata}},
-        %{level: min_level, handler: handler} = state
+        {level, group_leader, {Logger, message, timestamp, metadata}},
+        %{level: _min_level, handler: handler} = state
       ) do
-    maybe_log min_level, level do
-      item = Item.create(timestamp, level, message, metadata)
+    {metadata, payload} =
+      Keyword.split(metadata, [:module, :function, :file, :line, :context, :pid])
 
-      Logger.metadata(item.metadata)
+    timestamp = fix_timestamp(timestamp)
 
-      case handler do
-        :elastic ->
-          Task.async(fn ->
-            json =
-              item
-              |> Map.take([:timestamp, :context, :level])
-              |> Map.put(:entity, item.message.entity)
-              |> Map.put(:telemetry, item.message.measurements)
-              |> Jason.encode!()
-              |> :erlang.binary_to_list()
+    metadata
+    |> Keyword.put(:group_leader, inspect(group_leader))
+    |> Keyword.put(:timestamp, timestamp)
+    |> Logger.metadata()
 
-            uuid = Gelato.UUID.generate()
+    payload =
+      payload
+      |> Keyword.put(:timestamp, timestamp)
+      |> Keyword.put(:handler, handler)
 
-            case :httpc.request(
-                   :post,
-                   {to_charlist(@uri <> "/#{item.type}/_create/#{uuid}"), [], 'application/json',
-                    json},
-                   [],
-                   []
-                 ) do
-              {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
-                [id] = for {'location', id} <- resp, do: id
-
-                IO.puts(
-                  Formatter.format(
-                    :debug,
-                    %{ok: to_string(id)},
-                    item.timestamp,
-                    item.metadata
-                  )
-                )
-
-              error ->
-                IO.puts(
-                  Formatter.format(
-                    :warn,
-                    %{error: inspect(error)},
-                    item.timestamp,
-                    item.metadata
-                  )
-                )
-            end
-          end)
-
-        :stdout ->
-          IO.puts(
-            Formatter.format(
-              item.level,
-              %{message: item.message, context: item.context},
-              item.timestamp,
-              item.metadata
-            )
-          )
-      end
-    end
+    tm(level, group_leader, message, payload)
 
     {:ok, state}
   end
@@ -124,5 +104,42 @@ defmodule Gelato.Logger.Backend do
     |> Map.put_new(:name, name)
     |> Map.put_new(:level, base_level)
     |> Map.put_new(:handler, :elastic)
+  end
+
+  ##############################################################################
+  @spec process_info(pid :: pid(), process_info :: true | any()) :: map() | any()
+  defp process_info(pid, true) do
+    pid
+    |> Process.info()
+    |> Kernel.||([])
+    |> Map.new()
+    |> Map.take([
+      :status,
+      :message_queue_len,
+      :priority,
+      :total_heap_size,
+      :heap_size,
+      :stack_size,
+      :reductions,
+      :garbage_collection
+    ])
+    |> Map.update!(:garbage_collection, &Map.new/1)
+    |> Map.put(:schedulers, System.schedulers())
+  end
+
+  defp process_info(_pid, process_info), do: process_info
+
+  ##############################################################################
+
+  @spec fix_timestamp(timestamp :: nil | :calendar.datetime()) :: binary()
+  @doc false
+  defp fix_timestamp(nil),
+    do: DateTime.utc_now() |> DateTime.truncate(:millisecond) |> DateTime.to_iso8601()
+
+  defp fix_timestamp({{_, _, _} = d, {h, m, s, ms}}) do
+    with {:ok, timestamp} <- NaiveDateTime.from_erl({d, {h, m, s}}, {ms * 1_000, 3}),
+         result <- NaiveDateTime.to_iso8601(timestamp) do
+      "#{result}Z"
+    end
   end
 end
