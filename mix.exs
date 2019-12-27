@@ -2,7 +2,7 @@ defmodule Gelato.MixProject do
   use Mix.Project
 
   @app :gelato
-  @version "0.1.1"
+  @version "0.1.2"
   @owner "kantox"
 
   def project do
