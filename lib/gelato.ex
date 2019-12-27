@@ -19,7 +19,7 @@ defmodule Gelato do
   and might be used normally as a usual logger backend
 
   ```elixir
-  Logger.info "users", %{name: "John", reference: "U-123456789"}
+  Logger.info "users", name: "John", reference: "U-123456789"
   ```
 
   Also it supports benchmarking with `#{__MODULE__}.bench/4`. The latter will
@@ -32,8 +32,6 @@ defmodule Gelato do
   the call to all the exported functions’ payload. Unless `SOMETHING` is `true`,
   this value will be used instead of real process info.
   """
-
-  require Logger
 
   @typedoc false
   @type entity :: binary() | atom()
@@ -136,7 +134,7 @@ defmodule Gelato do
             metadata: %{
               context: unquote(context),
               module: unquote(module),
-              function: unquote(fun),
+              function: Map.new([unquote(fun)]),
               file: unquote(file),
               line: unquote(line)
             }
@@ -150,8 +148,10 @@ defmodule Gelato do
 
   Enum.each([:error, :warn, :info, :debug], fn level ->
     @doc "Helper macro to produce a logger entry with level **`#{level}`**."
-    defmacro unquote(level)(tag \\ nil, entity, payload),
-      do: log(unquote(level), tag, entity, payload)
+    defmacro unquote(level)(tag \\ nil, entity, payload) do
+      level = unquote(level)
+      quote do: Gelato.log(unquote(level), unquote(tag), unquote(entity), unquote(payload))
+    end
   end)
 
   @doc """

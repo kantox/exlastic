@@ -16,11 +16,11 @@ end
 
 ```elixir
 # sends the single event with attached process info to Elastic server
-Gelato.info "users", %{name: "John", reference: "U-123456789"}
+Gelato.info "users", name: "John", reference: "U-123456789"
 
 # sends the “in” and “out” events to Elastic server, with some collected
 #   stats in “out” events; discards process info
-Gelato.bench "users", %{name: "John", reference: "U-123456789", process_info: "N/A"}
+Gelato.bench "users", name: "John", reference: "U-123456789", process_info: "N/A"
 ```
 
 ## [Documentation](https://hexdocs.pm/gelato).

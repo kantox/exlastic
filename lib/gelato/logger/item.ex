@@ -22,21 +22,33 @@ defmodule Gelato.Logger.Item do
           metadata :: keyword()
         ) :: t()
   def create(timestamp \\ nil, level, message, metadata \\ []) do
-    message = Jason.decode!(message, keys: :atoms)
-    {context, message} = Map.pop(message, :context)
-    {explicit_metadata, message} = Map.pop(message, :metadata)
-    {type, message} = Map.pop(message, :type, :default)
+    case Jason.decode(message, keys: :atoms) do
+      {:ok, message} ->
+        {context, message} = Map.pop(message, :context)
+        {explicit_metadata, message} = Map.pop(message, :metadata)
+        {type, message} = Map.pop(message, :type, :default)
 
-    metadata = Keyword.merge(metadata, Map.to_list(explicit_metadata))
+        metadata = Keyword.merge(metadata, Map.to_list(explicit_metadata))
 
-    %__MODULE__{
-      timestamp: fix_timestamp(timestamp),
-      level: level,
-      type: type,
-      message: message,
-      metadata: Keyword.update(metadata, :pid, inspect(self()), &inspect/1),
-      context: context
-    }
+        %__MODULE__{
+          timestamp: fix_timestamp(timestamp),
+          level: level,
+          type: type,
+          message: message,
+          metadata: Keyword.update(metadata, :pid, inspect(self()), &inspect/1),
+          context: context
+        }
+
+      {:error, reason} ->
+        %__MODULE__{
+          timestamp: fix_timestamp(nil),
+          level: :error,
+          type: "unknown",
+          message: inspect(reason),
+          metadata: Keyword.update(metadata, :pid, inspect(self()), &inspect/1),
+          context: []
+        }
+    end
   end
 
   @spec fix_timestamp(timestamp :: nil | :calendar.datetime()) :: binary()

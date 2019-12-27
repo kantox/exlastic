@@ -38,13 +38,13 @@ defmodule Gelato.Logger.Backend do
         %{level: min_level, handler: handler} = state
       ) do
     maybe_log min_level, level do
-      Task.async(fn ->
-        item = Item.create(timestamp, level, message, metadata)
+      item = Item.create(timestamp, level, message, metadata)
 
-        Logger.metadata(item.metadata)
+      Logger.metadata(item.metadata)
 
-        case handler do
-          :elastic ->
+      case handler do
+        :elastic ->
+          Task.async(fn ->
             json =
               item
               |> Map.take([:timestamp, :context, :level])
@@ -84,18 +84,18 @@ defmodule Gelato.Logger.Backend do
                   )
                 )
             end
+          end)
 
-          :stdout ->
-            IO.puts(
-              Formatter.format(
-                item.level,
-                %{message: item.message, context: item.context},
-                item.timestamp,
-                item.metadata
-              )
+        :stdout ->
+          IO.puts(
+            Formatter.format(
+              item.level,
+              %{message: item.message, context: item.context},
+              item.timestamp,
+              item.metadata
             )
-        end
-      end)
+          )
+      end
     end
 
     {:ok, state}
