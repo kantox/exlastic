@@ -7,7 +7,7 @@ An opinionated [logger backend](https://hexdocs.pm/logger/Logger.html#module-bac
 ```elixir
 def deps do
   [
-    {:gelato, "~> 0.1"}
+    {:gelato, "~> 0.2"}
   ]
 end
 ```
@@ -16,11 +16,11 @@ end
 
 ```elixir
 # sends the single event with attached process info to Elastic server
-Gelato.info "users", name: "John", reference: "U-123456789"
+Logger.info "users", name: "John", reference: "U-123456789"
 
 # sends the “in” and “out” events to Elastic server, with some collected
 #   stats in “out” events; discards process info
-Gelato.bench "users", name: "John", reference: "U-123456789", process_info: "N/A"
+Gelato.bench :info, "users", name: "John", reference: "U-123456789", process_info: "N/A"
 ```
 
 ## [Documentation](https://hexdocs.pm/gelato).

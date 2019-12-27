@@ -50,7 +50,7 @@ defmodule Gelato do
   @type entity :: binary() | atom()
 
   @doc """
-  Similar to `#{__MODULE__}.log/4` but also accepts a block.
+  Similar to `Logger.log/3` but accepts a block.
 
   The block will be executed, surrounded by calls to `log` and the
   telemetry data will be accumulated in the latter call.
