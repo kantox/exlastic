@@ -73,15 +73,16 @@ defmodule Gelato do
         |> Keyword.put(:__tag__, :in)
         |> Keyword.put(:entity, unquote(entity))
 
-      now = System.monotonic_time(:microsecond)
       :ok = Logger.log(unquote(level), unquote(tag), payload)
 
+      now = System.monotonic_time(:microsecond)
       result = unquote(block)
+      benchmark = System.monotonic_time(:microsecond) - now
 
       payload =
         payload
         |> Keyword.put(:__tag__, :out)
-        |> Keyword.put(:benchmark, System.monotonic_time(:microsecond) - now)
+        |> Keyword.put(:benchmark, benchmark)
 
       :ok = Logger.log(unquote(level), unquote(tag), payload)
 

@@ -52,23 +52,26 @@ defmodule Gelato.Telemetry.Instrumenter do
 
     case handler do
       :elastic ->
-        Task.async(fn ->
-          case :httpc.request(
-                 :post,
-                 {to_charlist(@uri <> "/#{type}/_create/#{uuid}"), [], 'application/json',
-                  :erlang.binary_to_list(json)},
-                 [],
-                 []
-               ) do
-            {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
-              case for {'location', id} <- resp, do: id do
-                [id] -> {:ok, id}
-                error -> {:error, error}
-              end
+        Task.start(fn ->
+          result =
+            case :httpc.request(
+                   :post,
+                   {to_charlist(@uri <> "/#{type}/_create/#{uuid}"), [], 'application/json',
+                    :erlang.binary_to_list(json)},
+                   [],
+                   []
+                 ) do
+              {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
+                case for {'location', id} <- resp, do: id do
+                  [id] -> {:ok, id}
+                  error -> {:error, error}
+                end
 
-            error ->
-              {:error, error}
-          end
+              error ->
+                {:error, error}
+            end
+
+          if Mix.env() == :dev, do: IO.inspect(result)
         end)
 
       :stdout ->
