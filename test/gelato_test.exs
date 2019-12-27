@@ -1,6 +1,7 @@
 defmodule Gelato.Test do
   use ExUnit.Case
   import ExUnit.CaptureIO
+  import ExUnit.CaptureLog
   require Gelato
 
   doctest Gelato
@@ -16,12 +17,12 @@ defmodule Gelato.Test do
   end
 
   test "#log/4 allows to discard process info" do
-    assert capture_io(fn ->
+    assert capture_log(fn ->
              Gelato.log(:info, "measures", foo: 42, process_info: true)
-           end) =~ ~r/%{\s*garbage_collection:/
+           end) =~ "garbage_collection"
 
-    refute capture_io(fn ->
+    refute capture_log(fn ->
              Gelato.log(:info, "measures", foo: 42, process_info: "N/A")
-           end) =~ ~r/%{\s*garbage_collection:/
+           end) =~ "garbage_collection"
   end
 end
