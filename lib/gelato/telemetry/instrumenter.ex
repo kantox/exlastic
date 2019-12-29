@@ -52,32 +52,38 @@ defmodule Gelato.Telemetry.Instrumenter do
 
     case handler do
       :elastic ->
-        Task.start(fn ->
-          result =
-            case :httpc.request(
-                   :post,
-                   {to_charlist(@uri <> "/#{type}/_create/#{uuid}"), [], 'application/json',
-                    :erlang.binary_to_list(json)},
-                   [],
-                   []
-                 ) do
-              {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
-                case for {'location', id} <- resp, do: id do
-                  [id] -> {:ok, id}
-                  error -> {:error, error}
-                end
-
-              error ->
-                {:error, error}
-            end
-
-          if Mix.env() == :dev, do: IO.inspect(result)
-        end)
+        do_request(to_charlist(@uri <> "/#{type}/_create/#{uuid}"), json)
 
       :stdout ->
         level
         |> Formatter.format(content, timestamp, metadata)
         |> IO.puts()
     end
+  end
+
+  @spec do_request(uri :: charlist(), json :: binary) :: {:ok, binary} | {:error, any()}
+  defp do_request(uri, json) do
+    Task.start(fn ->
+      result =
+        case :httpc.request(
+               :post,
+               {uri, [], 'application/json', :erlang.binary_to_list(json)},
+               [],
+               []
+             ) do
+          {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
+            case for {'location', id} <- resp, do: id do
+              [id] -> {:ok, id}
+              error -> {:error, error}
+            end
+
+          error ->
+            {:error, error}
+        end
+
+      if Mix.env() == :dev, do: IO.puts("[🎬] Elastic response: " <> inspect(result))
+
+      result
+    end)
   end
 end
