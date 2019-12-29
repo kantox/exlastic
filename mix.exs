@@ -1,8 +1,8 @@
-defmodule Exlastic.MixProject do
+defmodule Gelato.MixProject do
   use Mix.Project
 
-  @app :exlastic
-  @version "0.1.1"
+  @app :gelato
+  @version "0.2.0"
   @owner "kantox"
 
   def project do
@@ -31,7 +31,7 @@ defmodule Exlastic.MixProject do
   def application do
     [
       extra_applications: [:logger, :jason, :inets, :ssl],
-      mod: {Exlastic.Application, []}
+      mod: {Gelato.Application, []}
     ]
   end
 
@@ -81,7 +81,7 @@ defmodule Exlastic.MixProject do
 
   defp docs do
     [
-      main: "Exlastic",
+      main: "Gelato",
       source_ref: "v#{@version}",
       canonical: "http://hexdocs.pm/#{@app}",
       logo: "stuff/logo-48x48.png",

@@ -1,9 +1,8 @@
 import Config
 
 config :gelato,
-  uri: "http://127.0.0.1:9200",
   events: [:app, :lib],
-  handler: :elastic
+  handler: :stdout
 
 config :logger,
   backends: [Gelato.Logger.Backend],
