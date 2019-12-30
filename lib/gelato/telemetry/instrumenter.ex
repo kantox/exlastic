@@ -48,36 +48,40 @@ defmodule Gelato.Telemetry.Instrumenter do
       metadata: Map.new(metadata)
     }
 
-    json = Jason.encode!(content)
-
     case handler do
       :elastic ->
-        Task.start(fn ->
-          result =
-            case :httpc.request(
-                   :post,
-                   {to_charlist(@uri <> "/#{type}/_create/#{uuid}"), [], 'application/json',
-                    :erlang.binary_to_list(json)},
-                   [],
-                   []
-                 ) do
-              {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
-                case for {'location', id} <- resp, do: id do
-                  [id] -> {:ok, id}
-                  error -> {:error, error}
-                end
-
-              error ->
-                {:error, error}
-            end
-
-          if Mix.env() == :dev, do: IO.inspect(result)
-        end)
+        do_request("/#{type}/_create/#{uuid}", Jason.encode!(content))
 
       :stdout ->
         level
         |> Formatter.format(content, timestamp, metadata)
         |> IO.puts()
     end
+  end
+
+  @spec do_request(path :: binary(), json :: binary()) :: {:ok, pid()}
+  defp do_request(path, json) do
+    Task.start(fn ->
+      result =
+        case :httpc.request(
+               :post,
+               {to_charlist(@uri <> path), [], 'application/json', :erlang.binary_to_list(json)},
+               [],
+               []
+             ) do
+          {:ok, {{'HTTP/1.1', 201, 'Created'}, resp, _}} ->
+            case for {'location', id} <- resp, do: id do
+              [id] -> {:ok, id}
+              error -> {:error, error}
+            end
+
+          error ->
+            {:error, error}
+        end
+
+      if Mix.env() == :dev, do: IO.puts("[🎬] Error response: " <> inspect(result))
+
+      result
+    end)
   end
 end
