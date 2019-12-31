@@ -49,6 +49,14 @@ defmodule Gelato do
   @typedoc false
   @type entity :: binary() | atom()
 
+  @doc false
+  defmacro __using__(_opts) do
+    quote do
+      import Gelato
+      require Logger
+    end
+  end
+
   @doc """
   Similar to `Logger.log/3` but accepts a block.
 
@@ -67,13 +75,15 @@ defmodule Gelato do
     quote do
       reference = inspect(make_ref())
 
+      tag = to_string(unquote(tag))
+
       payload =
         unquote(payload)
         |> Keyword.put(:__reference__, reference)
         |> Keyword.put(:__tag__, :in)
         |> Keyword.put(:entity, unquote(entity))
 
-      :ok = Logger.log(unquote(level), unquote(tag), payload)
+      :ok = Logger.log(unquote(level), tag, payload)
 
       now = System.monotonic_time(:microsecond)
       result = unquote(block)
@@ -84,9 +94,61 @@ defmodule Gelato do
         |> Keyword.put(:__tag__, :out)
         |> Keyword.put(:benchmark, benchmark)
 
-      :ok = Logger.log(unquote(level), unquote(tag), payload)
+      :ok = Logger.log(unquote(level), tag, payload)
 
       {:ok, result, payload}
+    end
+  end
+
+  @doc """
+  Defines a function that delegates to another module and wraps the delegated call
+  into `Gelato.bench/4`. Similar to `Kernel.defdelegate/2`.
+
+  Functions defined with `defdelegatelog/2` are public and can be invoked from
+  outside the module they’re defined in, as if they were defined using `def/2`.
+
+  ## Options
+    * `:to` — the module to dispatch to.
+    * `:as` — the function to call on the target given in `:to`.
+      This parameter is optional and defaults to the name being delegated (`fun`).
+    * `:level` — the level to be used for wrapping logging, default `:info`
+    * `:tag` — the tag to be used as an index in the target Elastic call.
+      Default: `"default"`.
+    * `:entity` — additional key to simplify search in Elastic logs. Usually
+      it specifies a business entity, loke `:user`, or `:order`. Default: `nil`.
+
+  ## Examples
+      defmodule MyList do
+        defdelegatelog reverse(list), to: Enum
+      end
+      MyList.reverse([1, 2, 3])
+      #   Logger.log is called under the hood with telemetry metrics attached
+      #=> [3, 2, 1]
+      #   Logger.log is called under the hood with telemetry metrics attached
+  """
+  defmacro defdelegatelog(fun, opts) do
+    fun = Macro.escape(fun, unquote: true)
+
+    quote bind_quoted: [fun: fun, opts: opts] do
+      target =
+        Keyword.get(opts, :to) ||
+          raise ArgumentError, "expected `to:` destination module to be given as argument"
+
+      {name, args, as, as_args} = Kernel.Utils.defdelegate(fun, opts)
+      level = Keyword.get(opts, :level, :info)
+      tag = Keyword.get(opts, :tag, "default")
+      entity = Keyword.get(opts, :entity)
+
+      @doc delegate_to: {target, as, :erlang.length(as_args)}
+
+      def unquote(name)(unquote_splicing(args)) do
+        {:ok, result, _payload} =
+          Gelato.bench unquote(level), unquote(tag), unquote(entity) do
+            unquote(target).unquote(as)(unquote_splicing(as_args))
+          end
+
+        result
+      end
     end
   end
 end
