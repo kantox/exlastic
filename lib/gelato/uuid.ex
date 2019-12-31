@@ -1,5 +1,6 @@
 defmodule Gelato.UUID do
   @moduledoc false
+
   # Gracefully stolen from Ecto type for UUIDs strings.
 
   @typedoc """
