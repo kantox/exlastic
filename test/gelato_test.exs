@@ -1,6 +1,7 @@
 defmodule Gelato.Test do
   use ExUnit.Case
   import ExUnit.CaptureIO
+  alias Gelato.Test.DDL.Test
 
   require Logger
   require Gelato
@@ -23,6 +24,6 @@ defmodule Gelato.Test do
   end
 
   test "#defdelegatelog/2 accepts arguments and works" do
-    assert {:ok, [foo: 42]} = Gelato.Test.DDL.Test.yo_test(foo: 42)
+    assert {:ok, [foo: 42]} = Test.yo_test(foo: 42)
   end
 end
