@@ -8,7 +8,7 @@ defmodule Gelato.Test do
   doctest Gelato
 
   test "accepts :app as an index" do
-    assert :ok = Logger.info(:app, entity: "measures", foo: 42)
+    assert :ok = Logger.info("app", entity: "measures", foo: 42)
   end
 
   test "#bench/4 executes a block" do
@@ -18,7 +18,11 @@ defmodule Gelato.Test do
   end
 
   test "#log/4 allows to discard process info" do
-    Logger.log(:info, :default, entity: "measures", foo: 42, process_info: true)
-    Logger.log(:info, :default, entity: "measures", foo: 42, process_info: "N/A")
+    Logger.log(:info, "default", entity: "measures", foo: 42, process_info: true)
+    Logger.log(:info, "default", entity: "measures", foo: 42, process_info: "N/A")
+  end
+
+  test "#defdelegatelog/2 accepts arguments and works" do
+    assert {:ok, [foo: 42]} = Gelato.Test.DDL.Test.yo_test(foo: 42)
   end
 end

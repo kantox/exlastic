@@ -2,7 +2,7 @@ defmodule Gelato.MixProject do
   use Mix.Project
 
   @app :gelato
-  @version "0.2.0"
+  @version "0.3.0"
   @owner "kantox"
 
   def project do
@@ -22,7 +22,7 @@ defmodule Gelato.MixProject do
       dialyzer: [
         plt_file: {:no_warn, ".dialyzer/plts/dialyzer.plt"},
         plt_add_deps: :transitive,
-        plt_add_apps: [],
+        plt_add_apps: [:mix],
         ignore_warnings: ".dialyzer/ignore.exs"
       ]
     ]

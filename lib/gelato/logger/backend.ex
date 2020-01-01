@@ -123,7 +123,7 @@ defmodule Gelato.Logger.Backend do
       :reductions,
       :garbage_collection
     ])
-    |> Map.update!(:garbage_collection, &Map.new/1)
+    |> Map.update(:garbage_collection, %{}, &Map.new/1)
     |> Map.put(:schedulers, System.schedulers())
   end
 

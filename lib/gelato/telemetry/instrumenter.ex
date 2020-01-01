@@ -48,11 +48,9 @@ defmodule Gelato.Telemetry.Instrumenter do
       metadata: Map.new(metadata)
     }
 
-    json = Jason.encode!(content)
-
     case handler do
       :elastic ->
-        do_request(to_charlist(@uri <> "/#{type}/_create/#{uuid}"), json)
+        do_request("/#{type}/_create/#{uuid}", Jason.encode!(content))
 
       :stdout ->
         level
@@ -61,13 +59,13 @@ defmodule Gelato.Telemetry.Instrumenter do
     end
   end
 
-  @spec do_request(uri :: charlist(), json :: binary) :: {:ok, binary} | {:error, any()}
-  defp do_request(uri, json) do
+  @spec do_request(path :: binary(), json :: binary()) :: {:ok, pid()}
+  defp do_request(path, json) do
     Task.start(fn ->
       result =
         case :httpc.request(
                :post,
-               {uri, [], 'application/json', :erlang.binary_to_list(json)},
+               {to_charlist(@uri <> path), [], 'application/json', :erlang.binary_to_list(json)},
                [],
                []
              ) do
@@ -81,7 +79,7 @@ defmodule Gelato.Telemetry.Instrumenter do
             {:error, error}
         end
 
-      if Mix.env() == :dev, do: IO.puts("[🎬] Elastic response: " <> inspect(result))
+      if Mix.env() == :dev, do: IO.puts("[🎬] Error response: " <> inspect(result))
 
       result
     end)
