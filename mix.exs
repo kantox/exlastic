@@ -38,6 +38,7 @@ defmodule Gelato.MixProject do
   defp deps do
     [
       {:telemetry, "~> 0.4"},
+      {:telemetry_poller, "~> 0.3"},
       {:jason, "~> 1.0"},
       # utilities
       {:credo, "~> 1.0", only: [:dev, :ci]},
