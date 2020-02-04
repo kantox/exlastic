@@ -18,7 +18,7 @@ jobs:
         with:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
-    - name: Install Dependencies
-      run: MIX_ENV=ci mix deps.get
-    - name: Run All Tests
-      run: MIX_ENV=ci mix quality.ci
+      - name: Install Dependencies
+        run: MIX_ENV=ci mix deps.get
+      - name: Run All Tests
+        run: MIX_ENV=ci mix quality.ci
